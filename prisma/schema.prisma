@@ -59,7 +59,7 @@ model Setting {
   xienMienBac Boolean @default(false)
   tinhUi      Boolean @default(false)
 
-  regions RegionSetting?
+  regions RegionSetting[]
 
   tinhTrungDaThang String
   tinhTrungDaXien  String
@@ -73,12 +73,13 @@ model RegionSetting {
   settingId String  @unique
   setting   Setting @relation(fields: [settingId], references: [id])
 
-  regionName   String @unique
+  regionName   String
   coSetting    Json
   trungSetting Json
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([settingId, regionName])
   @@index([settingId])
 }
