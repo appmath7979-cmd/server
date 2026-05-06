@@ -1,8 +1,9 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import helmet from "helmet";
-import "dotenv/config";
 import { ValidationPipe } from "@nestjs/common/pipes/validation.pipe";
+import * as cookieParser from "cookie-parser";
+import "dotenv/config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,13 +13,15 @@ async function bootstrap() {
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.CLIENT_URL
-        : "localhost:3000",
+        : "http://localhost:3000",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   });
+  app.use(cookieParser());
   app.setGlobalPrefix("api/v1");
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
+      forbidNonWhitelisted: true,
       transform: true,
     }),
   );
