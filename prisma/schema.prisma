@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String     @id @default(uuid())
+  username    String     @unique
+  phoneNumber String     @unique
+  password    String
+  role        Role       @default(ADMIN)
+  customers   Customer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  OWNER
+  ADMIN
+}
+
+model Customer {
+  id          String       @id @default(uuid())
+  fullName    String
+  phoneNumber String?      @unique
+  type        CustomerType @default(GUEST)
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  setting Setting?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum CustomerType {
+  GUEST
+  OWNER
+}
+
+model Setting {
+  id         String   @id @default(uuid())
+  customerId String   @unique
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  loaiCo      String
+  xienMienBac Boolean @default(false)
+  tinhUi      Boolean @default(false)
+
+  regions RegionSetting?
+
+  tinhTrungDaThang String
+  tinhTrungDaXien  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RegionSetting {
+  id        String  @id @default(uuid())
+  settingId String  @unique
+  setting   Setting @relation(fields: [settingId], references: [id])
+
+  regionName   String @unique
+  coSetting    Json
+  trungSetting Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([settingId])
+}
