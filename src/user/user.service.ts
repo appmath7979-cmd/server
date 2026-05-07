@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
@@ -10,7 +11,7 @@ import { UserResponseType } from "src/types/user.type";
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(@Inject("PRISMA_CLIENT") private readonly prisma: PrismaClient) {}
 
   async createUser(data: CreateUserDto): Promise<IBaseResponse> {
     try {
