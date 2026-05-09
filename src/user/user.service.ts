@@ -30,17 +30,7 @@ export class UserService {
     }
   }
 
-  async findUserByUsername(username: string): Promise<UserResponseType> {
-    try {
-      const user = await this.prisma.user.findUnique({ where: { username } });
-      if (!user)
-        throw new UnauthorizedException("Tài khoản hoặc mật khẩu không đúng");
-      return user;
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw new InternalServerErrorException(
-        "Đã xảy ra lỗi khi tìm kiếm tài khoản",
-      );
-    }
+  async findUserByUsername(username: string): Promise<UserResponseType | null> {
+    return await this.prisma.user.findUnique({ where: { username } });
   }
 }

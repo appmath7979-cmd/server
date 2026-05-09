@@ -43,6 +43,9 @@ export class AuthService {
       const { username, password } = data;
       const user = await this.userService.findUserByUsername(username);
 
+      if (!user)
+        throw new UnauthorizedException("Tài khoản hoặc mật khẩu không đúng");
+
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid)

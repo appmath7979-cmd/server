@@ -3,9 +3,9 @@ import { AppModule } from "./app.module";
 import helmet from "helmet";
 import { ValidationPipe } from "@nestjs/common/pipes/validation.pipe";
 import cookieParser from "cookie-parser";
-import "dotenv/config";
 import { DocumentBuilder } from "@nestjs/swagger/dist/document-builder";
 import { SwaggerModule } from "@nestjs/swagger";
+import "dotenv/config";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,6 +17,8 @@ async function bootstrap() {
         ? process.env.CLIENT_URL
         : "http://localhost:3000",
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    credentials: true,
+    allowedHeaders: "Content-Type, Accept, Authorization",
   });
   app.use(cookieParser());
   app.setGlobalPrefix("api/v1");
