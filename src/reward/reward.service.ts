@@ -3,10 +3,10 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import { PrismaService } from "src/prisma/prisma.service";
+import { PrismaService } from "../prisma/prisma.service";
 import { CreateRewardDto } from "./dto/create-reward.dto";
 import { GetRewardDto } from "./dto/get-reward.dto";
-import { rewardMessages } from "src/constants/messages.constant";
+import { rewardMessages } from "../constants/messages.constant";
 
 const { get, getServerError, createServerError, notFound } = rewardMessages;
 

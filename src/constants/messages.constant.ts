@@ -5,4 +5,12 @@ const rewardMessages = {
   createServerError: "Lỗi khi tạo kết quả. Vui lòng thử lại sau!",
 };
 
-export { rewardMessages };
+const userMessages = {
+  conflict: "Username đã tồn tại!",
+  createSuccess: "Tạo tài khoản thành công. Vui lòng đăng nhập.",
+  createForbidden: "Bạn không có quyền tạo tài khoản admin!",
+  createServerError: "Lỗi khi tạo tài khoản. Vui lòng thử lại sau!",
+  incorrectUser: "Username hoặc Mật khẩu không đúng!",
+};
+
+export { rewardMessages, userMessages };

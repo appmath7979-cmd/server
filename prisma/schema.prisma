@@ -16,7 +16,7 @@ model Reward {
   rewards   RegionReward[]
   release   String
   createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt()
+  updatedAt DateTime       @updatedAt
 
   @@index([release])
 }
@@ -27,7 +27,7 @@ model RegionReward {
   station   String
   results   Json
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
+  updatedAt DateTime @updatedAt
   reward    Reward?  @relation(fields: [rewardId], references: [id])
   rewardId  String?
 
@@ -38,4 +38,47 @@ enum Region {
   SOUTH
   NORTH
   CENTRAL
+}
+
+model User {
+  id        String     @id @default(uuid())
+  username  String     @unique
+  password  String
+  type      UserType
+  customers Customer[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([id])
+  @@index([username])
+}
+
+enum UserType {
+  ADMIN
+  USER
+}
+
+model Customer {
+  id           String       @id @default(uuid())
+  fullName     String       @unique
+  phoneNumber  String       @unique
+  type         CustomerType
+  loaiCo       String
+  xienMB       Boolean
+  tinhUi       Boolean
+  tinhTrungDaT String
+  tinhTrungDaX String
+  settings     Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+
+  @@index([userId])
+}
+
+enum CustomerType {
+  GUEST
+  OWNER
 }
