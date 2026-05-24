@@ -1,21 +1,9 @@
 import { Global, Module } from "@nestjs/common";
-import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaClient } from "@prisma/client";
-
-const adapter = new PrismaNeon({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-const prisma = new PrismaClient({ adapter });
-
-const dbProvider = {
-  provide: "PRISMA_CLIENT",
-  useValue: prisma,
-};
+import { PrismaService } from "./prisma.service";
 
 @Global()
 @Module({
-  providers: [dbProvider],
-  exports: [dbProvider],
+  providers: [PrismaService],
+  exports: [PrismaService],
 })
-export class DatabaseModule {}
+export class PrismaModule {}
