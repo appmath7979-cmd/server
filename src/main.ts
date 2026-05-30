@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import helmet from "helmet";
 import { ValidationPipe } from "@nestjs/common/pipes/validation.pipe";
 import cookieParser from "cookie-parser";
-import { DocumentBuilder } from "@nestjs/swagger/dist/document-builder";
+import { DocumentBuilder } from "@nestjs/swagger";
 import { SwaggerModule } from "@nestjs/swagger";
 import "dotenv/config";
 
