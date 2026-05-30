@@ -1,9 +1,18 @@
 import { Module } from "@nestjs/common";
 import { RewardModule } from "./reward/reward.module";
 import { PrismaModule } from "./prisma/prisma.module";
+import { UserModule } from "./user/user.module";
+import { AuthModule } from "./auth/auth.module";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
-  imports: [PrismaModule, RewardModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    RewardModule,
+    UserModule,
+    AuthModule,
+  ],
   controllers: [],
   providers: [],
 })
