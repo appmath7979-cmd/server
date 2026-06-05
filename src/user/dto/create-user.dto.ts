@@ -1,4 +1,4 @@
-import { UserType } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import { Escape } from "class-sanitizer";
 import {
   IsEnum,
@@ -36,6 +36,6 @@ export class CreateUserDto {
   password: string;
 
   @IsOptional()
-  @IsEnum(UserType)
-  type: UserType;
+  @IsEnum(UserRole)
+  role: UserRole;
 }

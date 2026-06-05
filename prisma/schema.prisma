@@ -45,13 +45,13 @@ model User {
   username    String     @unique
   displayName String
   password    String
-  type        UserType
+  role        UserRole
   customers   Customer[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
 
-enum UserType {
+enum UserRole {
   ADMIN
   USER
 }
@@ -68,10 +68,11 @@ model Customer {
   tinhTrungDaX String
   settings     Json
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User?        @relation(fields: [userId], references: [id])
+  userId      String?
+  transaction Transaction?
 
   @@index([userId])
 }
@@ -79,4 +80,26 @@ model Customer {
 enum CustomerType {
   GUEST
   OWNER
+}
+
+model Transaction {
+  id         String            @id @default(uuid())
+  content    Json
+  status     TransactionStatus @default(IDLE)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  customer   Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerId String            @unique
+}
+
+enum TransactionStatus {
+  IDLE
+  PENDING
+  COMPLETE
+}
+
+model History {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
