@@ -7,7 +7,6 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateRewardDto } from "./dto/create-reward.dto";
 import { GetRewardByTime } from "./dto/get-reward.dto";
-import { message } from "src/constants/message.constanst";
 
 @Injectable()
 export class RewardService {
@@ -61,7 +60,7 @@ export class RewardService {
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(message);
+      throw new InternalServerErrorException("Lỗi hệ thống!");
     }
   }
 
@@ -79,7 +78,7 @@ export class RewardService {
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(message);
+      throw new InternalServerErrorException("Lỗi hệ thống!");
     }
   }
 }

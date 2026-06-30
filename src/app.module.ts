@@ -5,6 +5,7 @@ import { UserModule } from "./user/user.module";
 import { AuthModule } from "./auth/auth.module";
 import { ConfigModule } from "@nestjs/config";
 import { CustomerModule } from "./customer/customer.module";
+import { TransactionModule } from "./transaction/transaction.module";
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CustomerModule } from "./customer/customer.module";
     UserModule,
     AuthModule,
     CustomerModule,
+    TransactionModule,
   ],
   controllers: [],
   providers: [],

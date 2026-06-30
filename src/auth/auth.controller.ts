@@ -11,13 +11,12 @@ export class AuthController {
   @Post("/sign-in")
   async signIn(
     @Body() data: GetAuthDto,
-    @Res({ passthrough: true }) res: Response,
+    // @Res({ passthrough: true }) res: Response,
   ) {
-    const { message, user, access_token, refresh_token } =
-      await this.authService.get(data);
+    const { message, user } = await this.authService.get(data);
 
-    if (access_token && refresh_token) {
-    }
+    // if (access_token && refresh_token) {
+    // }
 
     return { message, user };
   }

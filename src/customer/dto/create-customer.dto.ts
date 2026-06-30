@@ -26,10 +26,6 @@ export class CreateCustomerDto {
   type: CustomerType;
 
   @IsNotEmpty()
-  @IsString()
-  loaiCo: string;
-
-  @IsNotEmpty()
   @IsBoolean()
   xienMB: boolean;
 
@@ -49,4 +45,9 @@ export class CreateCustomerDto {
   @ValidateNested()
   @Type(() => CreateSettingDto)
   settings: CreateSettingDto;
+
+  @IsNotEmpty()
+  // @IsUUID("4", { message: "Người dùng không hợp lệ" })
+  @IsString()
+  userId: string;
 }

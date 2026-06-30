@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -7,100 +6,133 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
-import { message } from "src/constants/message.constanst";
-import { Prisma, UserRole } from "@prisma/client";
 import { instanceToPlain } from "class-transformer";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class CustomerService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateCustomerDto, userId: string) {
+  async create(data: CreateCustomerDto) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true },
-      });
-      if (!user) throw new NotFoundException("Người dùng không tồn tại!");
-
-      const plainSettings = instanceToPlain(data.settings);
-
+      const plainSetting = instanceToPlain(data.settings);
       await this.prisma.customer.create({
-        data: {
-          ...data,
-          settings: plainSettings as Prisma.InputJsonValue,
-          userId,
-        },
+        data: { ...data, settings: plainSetting },
       });
-
-      return { message: "Tạo người dùng thành công" };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(message);
-    }
-  }
-
-  async findAllForUser(userId: string) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { customers: true, _count: { select: { customers: true } } },
-      });
-
-      if (!user) throw new NotFoundException("Người dùng không tồn tại!");
-
-      const { customers, _count } = user;
 
       return {
-        message: "Tìm kiếm danh sách khách hàng thành công",
-        customers,
-        total: _count,
+        message: "Tạo khách hàng thành công!",
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(message);
+      throw new InternalServerErrorException("Lỗi hệ thống!");
     }
   }
 
-  async findAllForAdmin(
-    userId: string,
-    role: UserRole,
-    limit: number,
-    page: number,
-  ) {
+  async getAllCustomer(userId: string) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
+      const customers = await this.prisma.customer.findMany({
+        where: { userId },
+        select: {
+          fullName: true,
+          id: true,
+          type: true,
         },
-        select: { role: true },
       });
 
-      const skip = (page - 1) * limit;
-
-      if (!user) throw new NotFoundException("Người dùng không tồn tại!");
-      if (role !== user.role)
-        throw new ForbiddenException("Không có quyền truy cập");
-
-      const [customers, total] = await this.prisma.$transaction([
-        this.prisma.customer.findMany({
-          skip,
-          take: limit,
-          orderBy: { createdAt: "desc" },
-        }),
-        this.prisma.customer.count(),
-      ]);
+      const total = customers.length;
 
       return {
-        message: "Tìm kiếm danh sách khách hàng thành công.",
+        message: "Tìm kiếm khách hàng thành công!",
         customers,
         total,
-        page,
-        totalPage: Math.ceil(total / limit),
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException(message);
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async getCustomerById(id: string) {
+    try {
+      const customer = await this.prisma.customer.findUnique({ where: { id } });
+
+      if (!customer)
+        throw new NotFoundException({ message: "Khách hàng không tồn tại!" });
+
+      return {
+        message: "Tìm kiếm người dùng thành công!",
+        customer,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async getCustomerSetting(id: string) {
+    try {
+      const customerSetting = await this.prisma.customer.findUnique({
+        where: { id },
+        select: {
+          settings: true,
+          tinhTrungDaT: true,
+          tinhTrungDaX: true,
+          tinhUi: true,
+          type: true,
+          xienMB: true,
+        },
+      });
+
+      if (!customerSetting)
+        throw new NotFoundException({ message: "Khách hàng không tồn tại!" });
+
+      return {
+        message: "Lấy thông tin người dùng thành công!",
+        customerSetting,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async deleteManyCustomer(ids: string[]) {
+    try {
+      await this.prisma.customer.deleteMany({
+        where: { id: { in: ids } },
+      });
+
+      return {
+        message: "Xóa khách hàng thành công!",
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async deleteCustomerById(id: string) {
+    try {
+      await this.prisma.customer.delete({
+        where: { id },
+      });
+
+      return {
+        message: "Xóa khách hàng thành công!",
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2025"
+      ) {
+        // Ném ra một lỗi HTTP 404 có nghĩa hoặc return thông báo tùy thuộc vào framework của bạn
+        throw new NotFoundException(
+          `Không tìm thấy khách hàng với ID: ${id} để xóa.`,
+        );
+      }
+      throw new InternalServerErrorException("Lỗi hệ thống!");
     }
   }
 }
