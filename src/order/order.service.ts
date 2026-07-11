@@ -12,11 +12,11 @@ import {
   MessageValueItemDto,
 } from "./dto/create-order.dto";
 import { PrismaService } from "../prisma/prisma.service";
-import { BetPairDto } from "src/customer/dto/create-customer.dto";
+import { BetPairDto } from "../customer/dto/create-customer.dto";
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createOrder(data: CreateOrderDto) {
     try {
