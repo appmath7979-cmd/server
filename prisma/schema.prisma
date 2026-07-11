@@ -11,3 +11,60 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Region {
+  MB
+  MT
+  MN
+}
+
+model Customer {
+  id          String         @id @default(uuid())
+  fullName    String
+  phoneNumber String         @unique
+  type        CustomerType
+  status      CustomerStatus @default(ACTIVE)
+  tinhUi      Boolean
+  xienMienBac Boolean
+  settings    Json
+  orders      Order[]
+  dat         String
+  daxt        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum CustomerType {
+  OWNER
+  GUEST
+}
+
+enum DaType {
+  MOT_LAN
+  KY_RUOI
+  NHIEU_CAP
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Order {
+  id          String    @id @default(uuid())
+  results     Json
+  dateRelease String
+  timeRelease String
+  type        OrderType
+  region      Region
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  String?
+}
+
+enum OrderType {
+  XAC
+  CO
+  TRUNG
+}
