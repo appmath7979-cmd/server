@@ -111,11 +111,7 @@ class CreateOrderDto {
 
   @IsNotEmpty({ message: "Ngày tạo không được để trống!" })
   @IsString({ message: "Ngày tạo không đúng định dạng!" })
-  dateRelease: string;
-
-  @IsNotEmpty({ message: "Thời gian tạo không được để trống!" })
-  @IsString({ message: "Thời gian tạo không đúng định dạng!" })
-  timeRelease: string;
+  release: string;
 
   @IsNotEmpty({ message: "Loại tin không được để trống!" })
   @IsEnum(OrderType, { message: "Loại đơn không hợp lệ!" })

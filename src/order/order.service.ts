@@ -1,11 +1,10 @@
 import {
-  ConflictException,
+  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-// Import trực tiếp các DTO và Class từ file DTO của bạn
 import {
   CreateOrderDto,
   GroupedBetItemDto,
@@ -13,6 +12,8 @@ import {
 } from "./dto/create-order.dto";
 import { PrismaService } from "../prisma/prisma.service";
 import { BetPairDto } from "../customer/dto/create-customer.dto";
+import { Region } from "@prisma/client";
+import { UpdateOrderDto } from "./dto/update-order.dto";
 
 @Injectable()
 export class OrderService {
@@ -20,7 +21,12 @@ export class OrderService {
 
   async createOrder(data: CreateOrderDto) {
     try {
-      const { customerId, timeRelease, dateRelease, results } = data;
+      const { customerId, results, type } = data;
+
+      if (type !== "XAC")
+        throw new ForbiddenException(
+          "Bạn không có quyền thực hiện yêu cầu này!",
+        );
 
       const isExistingCustomer = await this.prisma.customer.findUnique({
         where: { id: customerId },
@@ -30,24 +36,11 @@ export class OrderService {
       if (!isExistingCustomer)
         throw new NotFoundException("Không tìm thấy khách hàng!");
 
-      const isExistingOrder = await this.prisma.order.findFirst({
-        where: {
-          AND: [{ timeRelease }, { dateRelease }],
-        },
-        select: { id: true },
-      });
-
-      if (isExistingOrder)
-        throw new ConflictException("Tin đã tồn tại hoặc không hợp lệ!");
-
-      // 3. Ép kiểu cấu hình khách hàng
       const customerSettings =
         (isExistingCustomer.settings as unknown as BetPairDto[]) || [];
 
-      // 4. Duyệt qua mảng results dựa trên cấu trúc DTO chính xác
       const calculatedResults = results.map(
         (group: GroupedBetItemDto): GroupedBetItemDto => {
-          // Sao chép object nhưng ép kiểu Record sâu để xử lý an toàn
           const updatedGroup = { ...group } as Record<
             string,
             Record<string, unknown[]>
@@ -65,9 +58,29 @@ export class OrderService {
             finalGroup[betType] = {};
 
             for (const stationCode in stations) {
-              // Xác định miền dựa vào đài
-              const regionKey: "MB" | "MT" | "MN" =
-                stationCode === "MB" ? "MB" : "MN";
+              const regionKey: Region =
+                stationCode === "MB"
+                  ? "MB"
+                  : stationCode === "MN"
+                    ? "MN"
+                    : stationCode === "MT"
+                      ? "MT"
+                      : "MN";
+
+              let multiplier = 1;
+
+              if (regionKey === "MB") {
+                if (betType === "b2") multiplier = 27;
+                else if (betType === "b3") multiplier = 23;
+                else if (betType === "b4") multiplier = 20;
+                else if (betType === "dd2" || betType === "dd3") multiplier = 1;
+              } else {
+                // Hệ số nhân cho các miền còn lại (MN, MT)
+                if (betType === "b2") multiplier = 18;
+                else if (betType === "b3") multiplier = 17;
+                else if (betType === "b4") multiplier = 16;
+                else if (betType === "dd2" || betType === "dd3") multiplier = 1;
+              }
 
               const coValue = setting ? setting.c[regionKey] : 0;
               const settingType = setting ? setting.type : "tile";
@@ -75,28 +88,23 @@ export class OrderService {
               const items = stations[stationCode];
               if (!items) continue;
 
-              // Ép kiểu tường minh cho mảng trả về từ hàm .map() khớp MessageValueItemDto[]
               finalGroup[betType][stationCode] = items.map(
                 (item: unknown): MessageValueItemDto => {
-                  // Ép kiểu item từ unknown sang cấu trúc MessageValueItemDto chính xác
                   const betItem = item as MessageValueItemDto;
                   const xac = betItem.score.xac;
                   let coCalculated = 0;
 
                   if (settingType === "tile") {
-                    const rate = coValue > 1 ? coValue / 100 : coValue;
-                    coCalculated = xac * rate;
-                  } else if (settingType === "thanhtien") {
-                    coCalculated = coValue;
-                  }
+                    coCalculated = xac * coValue * multiplier;
+                  } else if (settingType === "thanhtien")
+                    coCalculated = xac * coValue;
 
-                  // Trả về object đúng chuẩn cấu trúc của MessageValueItemDto
                   return {
                     number: betItem.number,
                     score: {
                       xac: betItem.score.xac,
                       trung: betItem.score.trung,
-                      co: coCalculated, // Đã cập nhật tiền cò
+                      co: coCalculated,
                     },
                   };
                 },
@@ -115,7 +123,7 @@ export class OrderService {
       });
 
       return {
-        message: "Tạo đơn thành công",
+        message: "Tạo tin thành công",
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -123,15 +131,185 @@ export class OrderService {
     }
   }
 
-  async getAllOrderByDate(dateRelease: string) {
+  async editOrder(id: string, data: UpdateOrderDto) {
     try {
-      const orders = await this.prisma.order.findMany({
-        where: { dateRelease },
+      // 1. Kiểm tra đơn hàng hiện tại có tồn tại không
+      const existingOrder = await this.prisma.order.findUnique({
+        where: { id },
+        select: { customerId: true },
+      });
+
+      if (!existingOrder || !existingOrder.customerId) {
+        throw new NotFoundException("Không tìm thấy tin nhắn cần sửa!");
+      }
+
+      // Tách riêng các trường ra khỏi data để tránh lỗi spread hoặc ghi đè nhầm kết quả cược
+      const { results, customerId, ...remainingData } = data;
+
+      let calculatedResults: GroupedBetItemDto[] | undefined = undefined;
+
+      // TỐI ƯU: Chỉ khi có truyền "results" mới chạy logic query Customer và tính toán
+      if (results && Array.isArray(results)) {
+        const targetCustomerId = customerId || existingOrder.customerId;
+
+        const customer = await this.prisma.customer.findUnique({
+          where: { id: targetCustomerId },
+          select: { settings: true },
+        });
+
+        if (!customer) {
+          throw new NotFoundException(
+            "Không tìm thấy khách hàng liên kết với tin này!",
+          );
+        }
+
+        const customerSettings =
+          (customer.settings as unknown as BetPairDto[]) || [];
+
+        calculatedResults = results.map(
+          (group: GroupedBetItemDto): GroupedBetItemDto => {
+            const updatedGroup = { ...group } as Record<
+              string,
+              Record<string, unknown[]>
+            >;
+            const finalGroup: Record<
+              string,
+              Record<string, MessageValueItemDto[]>
+            > = {};
+
+            for (const betType in updatedGroup) {
+              const setting = customerSettings.find((s) => s.name === betType);
+              const stations = updatedGroup[betType];
+
+              if (!stations) continue;
+              finalGroup[betType] = {};
+
+              for (const stationCode in stations) {
+                // Xác định miền (Region)
+                const regionKey: Region =
+                  stationCode === "MB"
+                    ? "MB"
+                    : stationCode === "MN"
+                      ? "MN"
+                      : stationCode === "MT"
+                        ? "MT"
+                        : "MN";
+
+                let multiplier = 1;
+
+                if (regionKey === "MB") {
+                  if (betType === "b2") multiplier = 27;
+                  else if (betType === "b3") multiplier = 23;
+                  else if (betType === "b4") multiplier = 20;
+                  else if (betType === "dd2" || betType === "dd3")
+                    multiplier = 1;
+                } else {
+                  // Hệ số nhân cho các miền còn lại (MN, MT)
+                  if (betType === "b2") multiplier = 18;
+                  else if (betType === "b3") multiplier = 17;
+                  else if (betType === "b4") multiplier = 16;
+                  else if (betType === "dd2" || betType === "dd3")
+                    multiplier = 1;
+                }
+
+                const coValue = setting ? setting.c[regionKey] : 0;
+                const settingType = setting ? setting.type : "tile";
+
+                const items = stations[stationCode];
+                if (!items) continue;
+
+                finalGroup[betType][stationCode] = items.map(
+                  (item: unknown): MessageValueItemDto => {
+                    const betItem = item as MessageValueItemDto;
+                    const xac = betItem.score.xac;
+                    let coCalculated = 0;
+
+                    if (settingType === "tile") {
+                      coCalculated = xac * coValue * multiplier;
+                    } else if (settingType === "thanhtien") {
+                      coCalculated = xac * coValue;
+                    }
+
+                    return {
+                      number: betItem.number,
+                      score: {
+                        xac: betItem.score.xac,
+                        trung: betItem.score.trung,
+                        co: coCalculated,
+                      },
+                    };
+                  },
+                );
+              }
+            }
+            return finalGroup;
+          },
+        );
+      }
+
+      // 4. Cập nhật dữ liệu vào Database sử dụng Prisma
+      const updatedOrder = await this.prisma.order.update({
+        where: { id },
+        data: {
+          ...(remainingData as Record<string, any>), // Các trường còn lại như type, release...
+          customerId, // Sẽ tự ignore nếu undefined
+          ...(calculatedResults && {
+            results: JSON.parse(JSON.stringify(calculatedResults)),
+          }),
+        },
       });
 
       return {
-        message: "Lấy danh sách đơn thành công",
+        message: "Cập nhật tin nhắn thành công",
+        order: updatedOrder,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+  async getAllOrderByDate(release: string) {
+    try {
+      const orders = await this.prisma.order.findMany({
+        where: { release },
+      });
+
+      return {
+        message: "Lấy danh sách tin thành công",
         orders,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async getById(id: string) {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id } });
+
+      if (!order) throw new NotFoundException("Không tìm thấy tin nhắn!");
+
+      return {
+        message: "Lấy tin nhắn thành công",
+        order,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async deleteById(id: string) {
+    try {
+      const orderDeleted = await this.prisma.order.delete({
+        where: { id },
+      });
+
+      if (!orderDeleted)
+        throw new NotFoundException("Tin nhắn không tồn tại để xóa!");
+      return {
+        message: "Xóa đơn hàng thành công",
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;

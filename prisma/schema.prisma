@@ -51,20 +51,35 @@ enum CustomerStatus {
 }
 
 model Order {
-  id          String    @id @default(uuid())
-  results     Json
-  dateRelease String
-  timeRelease String
-  type        OrderType
-  region      Region
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  customer    Customer? @relation(fields: [customerId], references: [id])
-  customerId  String?
+  id         String    @id @default(uuid())
+  results    Json
+  release    String
+  type       OrderType
+  region     Region
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+
+  @@index([region])
+  @@index([release])
 }
 
 enum OrderType {
   XAC
   CO
   TRUNG
+}
+
+model Setting {
+  id           String   @id @default(uuid())
+  day          Int
+  syntax       String
+  provinceCode String
+  region       Region
+  score        Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([day, syntax, region, provinceCode])
 }
