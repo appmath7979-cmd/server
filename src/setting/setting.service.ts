@@ -42,25 +42,16 @@ export class SettingService {
     }
   }
 
-  async updateMany(data: UpdateSettingDto[]) {
+  async updateMany(data: UpdateSettingDto[], ids: string[]) {
     try {
       const targetDay = [...new Set(data.map((item) => item.day))];
 
       if (targetDay.length === 0 || targetDay.length > 1 || !targetDay[0])
         throw new BadRequestException("Ngày không hợp lệ!");
 
-      const ids = data.map((item) => item.id);
-      const payload: Omit<UpdateSettingDto, "id">[] = data.map((item) => ({
-        day: item.day,
-        provinceCode: item.provinceCode,
-        region: item.region,
-        score: item.score,
-        syntax: item.syntax,
-      }));
-
       await this.prisma.$transaction([
         this.prisma.setting.deleteMany({ where: { id: { in: ids } } }),
-        this.prisma.setting.createMany({ data: payload }),
+        this.prisma.setting.createMany({ data }),
       ]);
 
       return { message: "Cập nhật thiết lập thành công!" };

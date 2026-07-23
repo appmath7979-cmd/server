@@ -18,7 +18,10 @@ export class SettingController {
   }
 
   @Put()
-  async updateMany(@Body() data: UpdateSettingDto[]) {
-    return await this.settingService.updateMany(data);
+  async updateMany(
+    @Body() payload: { data: UpdateSettingDto[]; ids: string[] },
+  ) {
+    const { data, ids } = payload;
+    return await this.settingService.updateMany(data, ids);
   }
 }

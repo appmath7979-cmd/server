@@ -4,40 +4,54 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
 } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
-import { UpdateOrderDto } from "./dto/update-order.dto";
 
 @Controller("order")
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  @Post()
+  async createOrder(@Body() data: CreateOrderDto) {
+    return await this.orderService.createOrder(data);
+  }
+
+  @Post("/layoff")
+  async createLayoff(@Body() data: CreateOrderDto) {
+    return await this.orderService.createLayoff(data);
+  }
+
   @Get()
-  async getManyByDate(@Query() query: { release: string }) {
-    return await this.orderService.getAllOrderByDate(query.release);
+  async getAllByDate(@Query("release") release: string) {
+    return await this.orderService.findAllByDate(release);
   }
 
   @Get(":id")
   async getById(@Param("id") id: string) {
-    return await this.orderService.getById(id);
+    return await this.orderService.findById(id);
   }
 
-  @Post()
-  async create(@Body() data: CreateOrderDto) {
-    return await this.orderService.createOrder(data);
-  }
-
-  @Patch(":id")
-  async update(@Param("id") id: string, @Body() data: UpdateOrderDto) {
-    return await this.orderService.editOrder(id, data);
+  @Get("customer/:customerId")
+  async getByDateWithCustomerId(
+    @Param("customerId") customerId: string,
+    @Query("release") release: string,
+  ) {
+    return await this.orderService.findByDateWithCustomerId({
+      customerId,
+      release,
+    });
   }
 
   @Delete(":id")
   async deleteById(@Param("id") id: string) {
     return await this.orderService.deleteById(id);
+  }
+
+  @Delete()
+  async deleteMany(@Body() ids: string[]) {
+    return await this.orderService.deleteMany(ids);
   }
 }

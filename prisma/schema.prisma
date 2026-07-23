@@ -51,24 +51,43 @@ enum CustomerStatus {
 }
 
 model Order {
-  id         String    @id @default(uuid())
-  results    Json
+  id         String         @id @default(uuid())
   release    String
-  type       OrderType
+  isLayoff   Boolean
   region     Region
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  customer   Customer? @relation(fields: [customerId], references: [id])
+  message    String
+  details    OrderDetails[]
+  isSend     Boolean?       @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  customer   Customer?      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   customerId String?
 
-  @@index([region])
+  @@index([customerId])
   @@index([release])
 }
 
-enum OrderType {
-  XAC
-  CO
-  TRUNG
+model OrderDetails {
+  id         String  @id @default(uuid())
+  customerId String?
+  date       String
+
+  syntax      String
+  stationCode String
+  number      String
+  type        String @default("bao")
+
+  price Float
+  xac   Float
+  co    Float
+  trung Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String
+
+  @@index([date, customerId])
 }
 
 model Setting {
