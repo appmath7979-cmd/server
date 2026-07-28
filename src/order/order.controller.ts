@@ -9,6 +9,8 @@ import {
 } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
+import { GetOrderDto } from "./dto/get-order.dto";
+import { Region } from "@prisma/client";
 
 @Controller("order")
 export class OrderController {
@@ -25,8 +27,14 @@ export class OrderController {
   }
 
   @Get()
-  async getAllByDate(@Query("release") release: string) {
-    return await this.orderService.findAllByDate(release);
+  async getAllByDate(@Query() queries: GetOrderDto) {
+    const { region, isLayoff, isSend, release } = queries;
+    return await this.orderService.findAll({
+      region,
+      release,
+      isLayoff,
+      isSend,
+    });
   }
 
   @Get(":id")
@@ -38,10 +46,12 @@ export class OrderController {
   async getByDateWithCustomerId(
     @Param("customerId") customerId: string,
     @Query("release") release: string,
+    @Query("region") region: Region,
   ) {
     return await this.orderService.findByDateWithCustomerId({
       customerId,
       release,
+      region,
     });
   }
 

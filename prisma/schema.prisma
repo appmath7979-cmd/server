@@ -32,6 +32,8 @@ model Customer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
 }
 
 enum CustomerType {
@@ -101,4 +103,85 @@ model Setting {
   updatedAt    DateTime @updatedAt
 
   @@unique([day, syntax, region, provinceCode])
+}
+
+model Reward {
+  id           String @id @default(uuid())
+  provinceCode String
+  release      String
+  region       Region
+
+  gdb       String[]
+  g1        String[]
+  g2        String[]
+  g3        String[]
+  g4        String[]
+  g5        String[]
+  g6        String[]
+  g7        String[]
+  g8        String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provinceCode, release])
+  @@index([release, region])
+}
+
+model User {
+  id          String     @id @default(uuid())
+  username    String     @unique()
+  phoneNumber String     @unique()
+  password    String
+  status      UserStatus
+  customers   Customer[]
+  type        UserType   @default(GUEST)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum PaymentStatus {
+  IDLE
+  PENDING
+  SUCCESS
+  ERROR
+}
+
+enum UserType {
+  ADMIN
+  GUEST
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  FROZEN
+}
+
+model Report {
+  id        String         @id @default(uuid())
+  release   String
+  details   ReportDetail[]
+  total     Float          @default(0)
+  totalMB   Float          @default(0)
+  totalMT   Float          @default(0)
+  totalMN   Float          @default(0)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model ReportDetail {
+  id           String @id @default(uuid())
+  region       Region
+  release      String
+  value        Float
+  type         String
+  syntax       String
+  provinceCode String
+  number       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  report    Report?  @relation(fields: [reportId], references: [id])
+  reportId  String?
 }
