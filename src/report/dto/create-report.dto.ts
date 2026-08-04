@@ -1,9 +1,8 @@
-import { Region } from "@prisma/client";
+import { CustomerType, Region } from "@prisma/client";
 import { Escape } from "class-sanitizer";
 import { Type } from "class-transformer";
 import {
   IsArray,
-  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsString,
@@ -11,38 +10,16 @@ import {
 } from "class-validator";
 
 class CreateReportDetailDto {
-  @IsNotEmpty()
-  @IsEnum(Region)
   region: Region;
-
-  @IsNotEmpty()
-  @IsString()
-  @Escape()
   release: string;
-
-  @IsNotEmpty()
-  @IsNumber()
   value: number;
-
-  @IsNotEmpty()
-  @IsString()
-  @Escape()
   type: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @Escape()
   syntax: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @Escape()
-  provinceCode: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @Escape()
+  // provinceCode: string;
   number: string;
+  fullName: string;
+  customerId: string;
+  customerType: CustomerType;
 }
 
 class CreateReportDto {

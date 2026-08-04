@@ -305,8 +305,9 @@ export class RewardService {
             // 🟠 F. ĐÁ (da)
             // -----------------------------------------------------
             else if (dbSettingName === "da") {
-              const targetNumbers = (detail.number || "")
-                .split(/[-,\s]+/)
+              const rawNumStr = (detail.number || "").replace(/-/g, " ");
+              const targetNumbers = rawNumStr
+                .split(/[\s,]+/)
                 .map((n) => n.trim().padStart(2, "0"))
                 .filter((n) => n.length === 2);
 
@@ -341,8 +342,9 @@ export class RewardService {
                 .filter((numStr) => numStr && numStr.length >= 2)
                 .map((numStr) => numStr.slice(-2));
 
-              const targetNumbers = (detail.number || "")
-                .split(/[-,\s]+/)
+              const rawNumStr = (detail.number || "").replace(/-/g, " ");
+              const targetNumbers = rawNumStr
+                .split(/[\s,]+/)
                 .map((n) => n.trim().padStart(2, "0"))
                 .filter((n) => n.length === 2);
 
@@ -380,32 +382,19 @@ export class RewardService {
             if (soConTrung > 0) {
               const xacValue = detail.xac ? Number(detail.xac) : 1;
 
-              // Riêng `da`: Khớp với enum DaType (KY_RUOI, NHIEU_CAP, MOT_LAN)
-              if (dbSettingName === "da") {
-                const datConfig = customer?.dat;
-
-                if (datConfig === "KY_RUOI") {
-                  totalWinMoney = winValue * xacValue * 1.5;
-                } else if (datConfig === "NHIEU_CAP") {
+              // Xử lý riêng Đầu miền Bắc (dd2 + MB + dau/xdau) theo tỉ lệ < 4 con
+              if (
+                dbSettingName === "dd2" &&
+                regionKey === "MB" &&
+                ["dau", "xdau"].includes(currentType)
+              ) {
+                if (soConTrung < 4) {
+                  totalWinMoney = (xacValue / 4) * soConTrung * winValue;
+                } else {
                   totalWinMoney = soConTrung * winValue * xacValue;
-                } else {
-                  totalWinMoney = winValue * xacValue;
                 }
               }
-              // Các hình thức dax
-              else if (dbSettingName === "dax") {
-                const daxtConfig = customer?.daxt;
-                let multiplier = 1;
-                if (daxtConfig === "KY_RUOI") {
-                  multiplier = soConTrung === 1 ? 1.5 : 1;
-                } else if (daxtConfig === "NHIEU_CAP") {
-                  multiplier = soConTrung;
-                } else {
-                  multiplier = 1;
-                }
-                totalWinMoney = soConTrung * winValue * xacValue * multiplier;
-              }
-              // Các hình thức thông thường khác
+              // Các hình thức thông thường (Bao, Đuôi, Đá, Đá xiên...) tính theo chuẩn: soConTrung * winValue * xacValue
               else {
                 totalWinMoney = soConTrung * winValue * xacValue;
               }
