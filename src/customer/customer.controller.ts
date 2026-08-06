@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
 import { CustomerService } from "./customer.service";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
 
@@ -12,8 +12,8 @@ export class CustomerController {
   }
 
   @Get()
-  async getMany() {
-    return await this.customerService.getAllCustomer();
+  async getMany(@Query() query: { order?: boolean; release?: string }) {
+    return await this.customerService.getAllCustomer(query);
   }
 
   @Get(":id")

@@ -9,12 +9,17 @@ import {
 } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
-import { GetOrderDto } from "./dto/get-order.dto";
-import { Region } from "@prisma/client";
 
 @Controller("order")
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
+
+  @Get()
+  async getByCustomerId(
+    @Query() query: { customerId: string; release: string },
+  ) {
+    return await this.orderService.getByCustomerId(query);
+  }
 
   @Post()
   async createOrder(@Body() data: CreateOrderDto) {
@@ -24,35 +29,6 @@ export class OrderController {
   @Post("/layoff")
   async createLayoff(@Body() data: CreateOrderDto) {
     return await this.orderService.createLayoff(data);
-  }
-
-  @Get()
-  async getAllByDate(@Query() queries: GetOrderDto) {
-    const { region, isLayoff, isSend, release } = queries;
-    return await this.orderService.findAll({
-      region,
-      release,
-      isLayoff,
-      isSend,
-    });
-  }
-
-  @Get(":id")
-  async getById(@Param("id") id: string) {
-    return await this.orderService.findById(id);
-  }
-
-  @Get("customer/:customerId")
-  async getByDateWithCustomerId(
-    @Param("customerId") customerId: string,
-    @Query("release") release: string,
-    @Query("region") region: Region,
-  ) {
-    return await this.orderService.findByDateWithCustomerId({
-      customerId,
-      release,
-      region,
-    });
   }
 
   @Delete(":id")

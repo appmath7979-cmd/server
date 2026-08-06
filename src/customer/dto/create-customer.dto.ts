@@ -1,3 +1,4 @@
+import { CustomerType, DaType } from "@prisma/client";
 import { Escape } from "class-sanitizer";
 import { Type } from "class-transformer";
 import {
@@ -52,8 +53,8 @@ class CreateCustomerDto {
   @Escape()
   phoneNumber: string;
 
-  @IsEnum(["khach", "chu"])
-  type: "khach" | "chu";
+  @IsEnum(CustomerType)
+  type: CustomerType;
 
   @IsBoolean()
   tinhUi: boolean;
@@ -62,15 +63,12 @@ class CreateCustomerDto {
   xienMienBac: boolean;
 
   @IsArray()
-  @ValidateNested({ each: true }) // Validate từng object trong mảng settings
+  @ValidateNested({ each: true })
   @Type(() => BetPairDto)
   settings: BetPairDto[];
 
-  @IsEnum(["1 lần", "ky rưỡi", "nhiều cặp"])
-  dat: "1 lần" | "ky rưỡi" | "nhiều cặp";
-
-  @IsEnum(["1 lần", "ky rưỡi", "nhiều cặp"])
-  daxt: "1 lần" | "ky rưỡi" | "nhiều cặp";
+  @IsEnum(DaType)
+  daxt: DaType;
 }
 
 export { CreateCustomerDto, BetPairDto };

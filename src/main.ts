@@ -3,8 +3,7 @@ import { AppModule } from "./app.module";
 import helmet from "helmet";
 import { ValidationPipe } from "@nestjs/common/pipes/validation.pipe";
 import cookieParser from "cookie-parser";
-import { DocumentBuilder } from "@nestjs/swagger";
-import { SwaggerModule } from "@nestjs/swagger";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import "dotenv/config";
 
 async function bootstrap() {
@@ -15,7 +14,7 @@ async function bootstrap() {
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.CLIENT_URL
-        : "http://localhost:3000",
+        : ["http://localhost:3000", "http://127.0.0.1:3000"],
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
     allowedHeaders: "Content-Type, Accept, Authorization",
@@ -39,7 +38,9 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api", app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 4001);
+  const port = process.env.PORT ?? 4000;
+  await app.listen(port, "0.0.0.0");
+  console.log(`Server is running on: http://localhost:${port}/api/v1`);
 }
 bootstrap().catch((err) => {
   console.error("Failed to start server:", err);

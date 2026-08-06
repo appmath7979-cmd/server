@@ -8,7 +8,6 @@ import { PrismaService } from "../prisma/prisma.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { Region } from "@prisma/client";
 import { BetPairDto } from "../customer/dto/create-customer.dto";
-import { GetOrderByCustomerId, GetOrderDto } from "./dto/get-order.dto";
 
 @Injectable()
 export class OrderService {
@@ -61,7 +60,7 @@ export class OrderService {
 
       const customer = await this.prisma.customer.findUnique({
         where: { id: customerId },
-        select: { id: true, settings: true, dat: true, daxt: true },
+        select: { id: true, settings: true, daxt: true },
       });
 
       if (!customer)
@@ -487,64 +486,47 @@ export class OrderService {
     }
   }
 
-  async findByDateWithCustomerId(payload: GetOrderByCustomerId) {
+  async getByCustomerId({
+    customerId,
+    release,
+  }: {
+    customerId: string;
+    release: string;
+  }) {
     try {
-      const { customerId, release, region } = payload;
-      const orders = await this.prisma.order.findMany({
-        where: { AND: [{ customerId }, { release }, { region }] },
-        include: { details: true },
-      });
+      // const orders = await this.prisma.order.findFirst({
+      //   where: { customerId, release },
+      //   include: {
+      //     details: true,
+      //     customer: {
+      //       select: {
+      //         fullName: true,
+      //         type: true,
+      //       },
+      //     },
+      //   },
+      // });
 
-      return {
-        message: "Tìm kiếm tin nhắn thành công",
-        orders,
-      };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException("Lỗi hệ thống!");
-    }
-  }
+      const { customer, orders } = await this.prisma.$transaction(
+        async (tx) => {
+          const orders = await tx.order.findFirst({
+            where: { customerId, release },
+            include: { details: true },
+          });
 
-  async findById(id: string) {
-    try {
-      const order = await this.prisma.order.findUnique({
-        where: { id },
-        include: { details: true },
-      });
-      if (!order)
-        throw new NotFoundException("Không tìm thấy tin nhắn yêu cầu!");
-      return {
-        message: "Tìm kiếm tin nhắn thành công",
-        order,
-      };
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new InternalServerErrorException("Lỗi hệ thống!");
-    }
-  }
+          const customer = await tx.customer.findUnique({
+            where: { id: customerId },
+            select: { fullName: true, type: true },
+          });
 
-  async findAll(queries: GetOrderDto) {
-    try {
-      const { release, isLayoff, region, isSend } = queries;
-
-      const getValue = (val: boolean | undefined | string) => {
-        if (val === "true" || val === true) return true;
-        if (val === "false" || val === false) return false;
-        return undefined;
-      };
-
-      const orders = await this.prisma.order.findMany({
-        where: {
-          release,
-          region,
-          isLayoff: getValue(isLayoff),
-          isSend: getValue(isSend),
+          return { orders, customer };
         },
-        include: { details: true },
-      });
+      );
+
       return {
-        message: "Tìm kiếm tin nhắn thành công",
+        message: "Tìm kiếm tin nhắn thành công!",
         orders,
+        customer,
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;

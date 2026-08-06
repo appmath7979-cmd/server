@@ -7,7 +7,6 @@ import {
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateCustomerDto } from "./dto/create-customer.dto";
-import { CustomerType, DaType } from "@prisma/client";
 
 @Injectable()
 export class CustomerService {
@@ -15,38 +14,38 @@ export class CustomerService {
 
   async createCustomer(data: CreateCustomerDto) {
     try {
-      const { type, dat, daxt, phoneNumber } = data;
+      const { phoneNumber } = data;
 
-      const customer = await this.prisma.customer.findUnique({
-        where: { phoneNumber },
-        select: { id: true },
-      });
+      await this.prisma.$transaction(async (tx) => {
+        const cus = await tx.customer.findUnique({
+          where: { phoneNumber },
+          select: { id: true },
+        });
 
-      if (customer)
-        throw new ConflictException("Khách hàng đã tồn tại. Vui lòng thử lại!");
+        if (cus) throw new ConflictException("Khách hàng đã tồn tại");
 
-      const typeFormat: CustomerType = type === "chu" ? "OWNER" : "GUEST";
-      const datFormat: DaType =
-        dat === "1 lần"
-          ? "MOT_LAN"
-          : dat === "ky rưỡi"
-            ? "KY_RUOI"
-            : "NHIEU_CAP";
-      const daxtFormat: DaType =
-        daxt === "1 lần"
-          ? "MOT_LAN"
-          : dat === "ky rưỡi"
-            ? "KY_RUOI"
-            : "NHIEU_CAP";
+        const cusCreated = await this.prisma.customer.create({
+          data: {
+            ...data,
+            settings: JSON.parse(JSON.stringify(data.settings)),
+          },
+          select: { id: true },
+        });
 
-      await this.prisma.customer.create({
-        data: {
-          ...data,
-          type: typeFormat,
-          settings: JSON.parse(JSON.stringify(data.settings)),
-          dat: datFormat,
-          daxt: daxtFormat,
-        },
+        const user = await tx.user.findUnique({
+          where: { phoneNumber },
+          select: { id: true },
+        });
+
+        if (user) {
+          await this.prisma.userConnection.create({
+            data: { targetId: cusCreated.id, userId: user.id },
+          });
+        } else {
+          await this.prisma.userConnection.create({
+            data: { targetId: cusCreated.id },
+          });
+        }
       });
 
       return {
@@ -58,28 +57,42 @@ export class CustomerService {
     }
   }
 
-  async getAllCustomer() {
+  async getAllCustomer({
+    order = false,
+    release,
+  }: {
+    order?: boolean;
+    release?: string;
+  }) {
     try {
-      const customers = await this.prisma.customer.findMany({
-        select: {
-          id: true,
-          fullName: true,
-          status: true,
-          type: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+      const select =
+        order && release
+          ? {
+              id: true,
+              fullName: true,
+              status: true,
+              type: true,
+              orders: {
+                where: { release },
+                select: { message: true },
+              },
+              createdAt: true,
+              updatedAt: true,
+            }
+          : {
+              id: true,
+              fullName: true,
+              status: true,
+              type: true,
+              createdAt: true,
+              updatedAt: true,
+            };
 
-      const dataCustomers = customers.map((customer) =>
-        customer.type === "GUEST"
-          ? { ...customer, type: "khach" }
-          : { ...customer, type: "chu" },
-      );
+      const customers = await this.prisma.customer.findMany({ select });
 
       return {
         message: "Lấy danh sách khách hàng thành công.",
-        customers: dataCustomers,
+        customers,
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;
@@ -91,6 +104,9 @@ export class CustomerService {
     try {
       const customer = await this.prisma.customer.findUnique({
         where: { id: customerId },
+        include: {
+          orders: true,
+        },
       });
 
       if (!customer)
