@@ -181,12 +181,15 @@ model Standard {
 }
 
 model PersonalStandard {
-  id         String    @id @default(uuid())
-  day        Int
-  region     Region
-  value      Int
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?
+  id          String    @id @default(uuid())
+  day         Int
+  region      Region
+  stationCode String
+  value       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  String?
+
+  @@index([day, stationCode])
 }

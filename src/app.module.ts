@@ -5,7 +5,8 @@ import { CustomerModule } from "./customer/customer.module";
 import { SettingModule } from "./setting/setting.module";
 import { OrderModule } from "./order/order.module";
 import { RewardModule } from "./reward/reward.module";
-import { ReportModule } from "./report/report.module";
+import { StandardModule } from "./standard/standard.module";
+import { StandardPersonalModule } from "./standard-personal/standard-personal.module";
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { ReportModule } from "./report/report.module";
     SettingModule,
     OrderModule,
     RewardModule,
-    ReportModule,
+    StandardModule,
+    StandardPersonalModule,
   ],
   controllers: [],
   providers: [],
