@@ -489,44 +489,69 @@ export class OrderService {
   async getByCustomerId({
     customerId,
     release,
+    region,
   }: {
     customerId: string;
-    release: string;
+    release?: string;
+    region: Region;
   }) {
     try {
-      // const orders = await this.prisma.order.findFirst({
-      //   where: { customerId, release },
-      //   include: {
-      //     details: true,
-      //     customer: {
-      //       select: {
-      //         fullName: true,
-      //         type: true,
-      //       },
-      //     },
-      //   },
-      // });
-
       const { customer, orders } = await this.prisma.$transaction(
         async (tx) => {
-          const orders = await tx.order.findFirst({
-            where: { customerId, release },
+          const orders = await tx.order.findMany({
+            where: { customerId, release, region },
             include: { details: true },
           });
 
           const customer = await tx.customer.findUnique({
             where: { id: customerId },
-            select: { fullName: true, type: true },
+            select: { fullName: true, type: true, settings: true, daxt: true },
           });
 
           return { orders, customer };
         },
       );
 
+      if (!customer || !orders) {
+        throw new NotFoundException(
+          "Không tìm thấy thông tin đơn hàng hoặc khách hàng!",
+        );
+      }
+
       return {
         message: "Tìm kiếm tin nhắn thành công!",
         orders,
         customer,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException("Lỗi hệ thống!");
+    }
+  }
+
+  async getById({
+    customerId,
+    orderId,
+  }: {
+    customerId: string;
+    orderId: string;
+  }) {
+    try {
+      const order = await this.prisma.order.findFirst({
+        where: { AND: [{ customerId, id: orderId }] },
+        include: {
+          customer: {
+            select: { fullName: true, type: true },
+          },
+          details: true,
+        },
+      });
+
+      if (!order) throw new NotFoundException("Tin không tồn tại!");
+
+      return {
+        message: "Tìm tin nhắn thành công",
+        order,
       };
     } catch (error) {
       if (error instanceof HttpException) throw error;

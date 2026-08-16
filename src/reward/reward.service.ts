@@ -417,7 +417,7 @@ export class RewardService {
     }
   }
 
-  async findByDate(release: string) {
+  async findByDate(release?: string) {
     try {
       const reward = await this.prisma.reward.findMany({ where: { release } });
       return {

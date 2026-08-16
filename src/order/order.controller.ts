@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { OrderService } from "./order.service";
 import { CreateOrderDto } from "./dto/create-order.dto";
+import { Region } from "@prisma/client";
 
 @Controller("order")
 export class OrderController {
@@ -16,9 +17,17 @@ export class OrderController {
 
   @Get()
   async getByCustomerId(
-    @Query() query: { customerId: string; release: string },
+    @Query() query: { customerId: string; release?: string; region: Region },
   ) {
     return await this.orderService.getByCustomerId(query);
+  }
+
+  @Get("customer/:customerId/order/:orderId")
+  async getById(
+    @Param("customerId") customerId: string,
+    @Param("orderId") orderId: string,
+  ) {
+    return await this.orderService.getById({ customerId, orderId });
   }
 
   @Post()

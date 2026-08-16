@@ -28,7 +28,7 @@ class CreateOrderDetailsDto {
   @IsString()
   type?: string;
 
-  @IsNumber()
+  @IsNotEmpty()
   @IsNumber()
   xac: number;
 }

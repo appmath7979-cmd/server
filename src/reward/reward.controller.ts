@@ -12,7 +12,7 @@ export class RewardController {
   }
 
   @Get()
-  async getReward(@Query("release") release: string) {
+  async getReward(@Query("release") release?: string) {
     return await this.rewardService.findByDate(release);
   }
 }

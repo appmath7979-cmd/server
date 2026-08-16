@@ -18,16 +18,17 @@ enum Region {
 }
 
 model Customer {
-  id          String         @id @default(uuid())
-  fullName    String
-  phoneNumber String         @unique
-  type        CustomerType
-  status      CustomerStatus @default(ACTIVE)
-  tinhUi      Boolean
-  xienMienBac Boolean
-  settings    Json
-  orders      Order[]
-  daxt        String
+  id                String             @id @default(uuid())
+  fullName          String
+  phoneNumber       String             @unique
+  type              CustomerType
+  status            CustomerStatus     @default(ACTIVE)
+  tinhUi            Boolean
+  xienMienBac       Boolean
+  settings          Json
+  orders            Order[]
+  daxt              String
+  personalStandards PersonalStandard[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -168,30 +169,24 @@ model UserConnection {
   @@unique([userId, targetId])
 }
 
-model Report {
-  id        String         @id @default(uuid())
-  release   String
-  details   ReportDetail[]
-  total     Float          @default(0)
-  totalMB   Float          @default(0)
-  totalMT   Float          @default(0)
-  totalMN   Float          @default(0)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-}
-
-model ReportDetail {
-  id           String @id @default(uuid())
-  region       Region
-  release      String
-  value        Float
-  type         String
-  syntax       String
-  provinceCode String
-  number       String
+model Standard {
+  id          String @id @default(uuid())
+  day         Int
+  region      Region
+  stationCode String
+  value       Int
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  report    Report?  @relation(fields: [reportId], references: [id])
-  reportId  String?
+}
+
+model PersonalStandard {
+  id         String    @id @default(uuid())
+  day        Int
+  region     Region
+  value      Int
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
 }
